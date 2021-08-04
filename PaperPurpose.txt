@@ -1,0 +1,1 @@
+Define the main purpose of the paper: focus on how to adapt the convex analysis to neural nets and assess the method in "real" cases... What are the main results? Dynamicity of the network? The algorithm will be comapred to what else?
