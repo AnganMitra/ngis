@@ -14,11 +14,11 @@ dataPath = "./BKDataCleaned/"
 outputPath = "equationalDecomposition/"
 floorID = 7
 zoneID = 1
-testPercentage = 0.99
+testPercentage = 0.9
 resamplingFreq = "30S"
 # start_index= int(sys.argv[1].strip()) # 150
 # end_index = int(sys.argv[2].strip()) # 400
-step_size = 24
+step_size = 36
 
 
 plt.rcParams.update({  "text.usetex": True,  "font.family": "sans-serif", "font.sans-serif": ["Helvetica"]})
@@ -55,7 +55,7 @@ def plotCompFigure(truth,predicted, columns, outputPath = "equationalDecompositi
     # for i in range(0,columns):
     #     axs[2*i] = fig.add_subplot(2, 1, 1)
     #     axs[2*i+1] = fig.add_subplot(2, 1, 2, sharex=axs[2*i])
-    fig, axs = plt.subplots(1, 2*columns-2, figsize=(30, 8))
+    fig, axs = plt.subplots(1, columns-1, figsize=(30, 8))
     t_plot = np.arange(0, predicted.shape[0])
     # import pdb; pdb.set_trace()
     for i in range(0,columns):
@@ -64,12 +64,13 @@ def plotCompFigure(truth,predicted, columns, outputPath = "equationalDecompositi
            min(min(truth[:, i]), min(predicted[:, i])),
            max(max(truth[:, i]), max(predicted[:, i])),
         ]
-        axs[2*i].plot(t_plot, truth[:, i], "r", label=f"$T-x_{i}$", **plot_kws)
-        axs[2*i+1].plot(t_plot, predicted[:, i], "r", label=f"P-$x_{i}$", **plot_kws)
-        axs[2*i].set(xlabel="t", ylabel=columnList[i])
-        axs[2*i+1].set(xlabel="t", ylabel=f"P-{columnList[i]}")
-        axs[2*i].set_ylim(y_axis[0], y_axis[1])
-        axs[2*i+1].set_ylim(y_axis[0], y_axis[1])
+        axs[i].plot(t_plot, truth[:, i], "g", label=f"$T-x_{i}$", **plot_kws)
+        axs[i].plot(t_plot, predicted[:, i], "r", label=f"P-$x_{i}$", **plot_kws)
+        axs[i].set(xlabel="t", ylabel=columnList[i])
+        # axs[2*i+1].set(xlabel="t", ylabel=f"P-{columnList[i]}")
+        axs[i].set_ylim(y_axis[0], y_axis[1])
+        
+        # axs[2*i+1].set_ylim(y_axis[0], y_axis[1])
         
     # plt.show()
     plt.savefig(f"{outputPath}GenX-{start_index}-{end_index}.png", dpi = 200)
@@ -87,18 +88,23 @@ def readData(columnList):
     # rdf = df.resample(resamplingFreq).agg("mean")
     # print (len(df))
     # rdf = df.resample(resamplingFreq).interpolate(method ='linear', limit_direction ='forward', limit = 10).dropna()[columnList]
-    # rdf = df.resample(resamplingFreq).ffill().dropna()[columnList]
-    rdf = df.resample(resamplingFreq).pad().dropna()[columnList]
-    # rdf = df.dropna()[columnList]
-    # print(len(rdf))
+    rdf = df.ffill().dropna()[columnList]
+    # rdf = df.resample(resamplingFreq).pad().dropna()[columnList]
+    # rdf = df.rolling(6).mean().dropna()[columnList]s
+    
     rdf = (rdf - rdf.min()) / (rdf.max() - rdf.min())
+    # print(len(rdf))
+    
 
     return rdf
 
 def splitData(rdf,  start_index, end_index):
     # import pdb; pdb.set_trace()
-    x_train = rdf.iloc[:int(len(rdf)*testPercentage),:].to_numpy()
-    x_train = x_train[start_index:end_index]
+    pdf = rdf.iloc[start_index:end_index]
+    
+    x_train = pdf.to_numpy()
+    # x_train = rdf.iloc[:int(len(rdf)*testPercentage),:].to_numpy()
+    # x_train = x_train[start_index:end_index]
     x0_train = x_train[0]
     t_train = np.linspace(0, 1, int(len(x_train)))
 
@@ -128,7 +134,7 @@ def crossValEquation(trainD, dt):
     search = GridSearchCV(
         model,
         param_grid,
-        cv=TimeSeriesSplit(n_splits=2)
+        cv=TimeSeriesSplit(n_splits=3)
     )
 
     search.fit(x_train)
@@ -137,6 +143,38 @@ def crossValEquation(trainD, dt):
     # search.best_estimator_.print()
     x_sim = search.best_estimator_.simulate(x0_train,t_train)
     return x_sim, search.best_estimator_
+
+def customEq(x_train, dt ):
+    x_train, x0_train, t_train = trainD
+    fd = ps.FiniteDifference(drop_endpoints=True)
+    fd = ps.SmoothedFiniteDifference(drop_endpoints=True)
+    
+    library_functions = [
+        lambda x : np.exp(x),
+        lambda x : 1./x,
+        lambda x : x,
+        lambda x,y : np.sin(x+y)
+    ]
+    library_function_names = [
+        lambda x : 'exp(' + x + ')',
+        lambda x : '1/' + x,
+        lambda x : x,
+        lambda x,y : 'sin(' + x + ',' + y + ')'
+    ]
+    custom_library = ps.CustomLibrary(
+        library_functions=library_functions, function_names=library_function_names
+    )
+
+    custom_library = ps.FourierLibrary()+ps.PolynomialLibrary()+ps.IdentityLibrary()
+
+    model = ps.SINDy(feature_library=custom_library,
+                        differentiation_method=fd,
+                        discrete_time=True)
+
+    model.fit(x_train, t=t_train, multiple_trajectories=True)
+    model.print()
+    x_sim = model.simulate(x0_train,t_train)
+    return x_sim, model
 
 def addDatePattern(rdf):
     # import pdb; pdb.set_trace()
@@ -165,34 +203,50 @@ def dumpEquations(model, init, testPerf, lhs=None,  precision=3):
 
 columnList = [ "temperature", "ACPower"]
 print ([f"x{i} : {v}" for i,v in enumerate(columnList)])
+
 rdf = readData(columnList)
 rdf = addDatePattern(rdf); columnList.append("dateP")
-equationEvolution = []
-for start_index in range(0, len(rdf), step_size):
-    end_index = min(start_index+step_size, len(rdf)-1)
-    trainD, testD = splitData(rdf, start_index, end_index)
-    # plotFigure(trainD[0], columns= len(columnList))
+lossEvolution = []
+
+try:
+    for start_index in range(0, int(len(rdf)*testPercentage), step_size):
+        
+        end_index = min(start_index+step_size, len(rdf)-1)
+
+        # start_index,end_index = 1805, 1818
+        trainD, testD = splitData(rdf, start_index, end_index)
+        # plotFigure(trainD[0], columns= len(columnList))
 
 
-    dt = 1/len(trainD[-1])
-    # x_sim, model = deepEstimator(trainD, dt )
-    x_sim, model = crossValEquation(trainD, dt)
-    # plotFigure(x_sim, columns= len(columnList))
+        dt = 1/len(trainD[-1])
+        # x_sim, model = deepEstimator(trainD, dt )
+        x_sim, model = crossValEquation(trainD, dt)
+        # plotFigure(x_sim, columns= len(columnList))
 
-    
-    equationEvolution.append(model.print())
-    x_test, t_test, x0_test = testD
-    # Compare SINDy-predicted derivatives with finite difference derivatives
-    x_sim = model.simulate(x0_test, t_test)
-    testPerf = model.score(testD[0], t=1/len(testD[0]))
+        x_test, t_test, x0_test = testD
+        # if start_index > 1 : x0_test = x_sim[-1]
+        # Compare SINDy-predicted derivatives with finite difference derivatives
+        x_sim = model.simulate(x0_test, t_test)
+        testPerf = model.score(testD[0], t=1/len(testD[0]))
+        # import pdb; pdb.set_trace()
+        # print ("-------------DYNAMICS----------------")
+        # print (f"Start/End : {start_index}/{end_index}" )
+        # print (f"Model Init : {trainD[1]}" )
+        # print (f"Equations ", ); model.print()
+        # print (f"Test Perf ", testPerf)
+        # print ()
+        lossEvolution.append(testPerf)
+        payload = dumpEquations(model, trainD[1], testPerf, lhs=None,  precision=3)
+        json.dump( payload,open(f"{outputPath}ModG-{start_index}-{end_index}.json", "w"))
+        plotCompFigure(trainD[0],x_sim, columns= len(columnList))
+        # exit()
+
+except KeyboardInterrupt:
     # import pdb; pdb.set_trace()
-    # print ("-------------DYNAMICS----------------")
-    # print (f"Start/End : {start_index}/{end_index}" )
-    # print (f"Model Init : {trainD[1]}" )
-    # print (f"Equations ", ); model.print()
-    # print (f"Test Perf ", testPerf)
-    # print ()
-    
-    payload = dumpEquations(model, trainD[1], testPerf, lhs=None,  precision=3)
-    json.dump( payload,open(f"{outputPath}ModG-{start_index}-{end_index}.json", "w"))
-    plotCompFigure(trainD[0],x_sim, columns= len(columnList))
+    pass
+finally:
+    plt.clf()
+    plt.plot(np.arange(0,len(lossEvolution)), lossEvolution, label="Modelling Loss")
+    plt.savefig(f"{outputPath}Loss-{0}-{end_index}.png", dpi = 200)
+    # plt.savefig()
+    sys.exit()
