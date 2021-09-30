@@ -1,6 +1,9 @@
-from geneticOptimizer.memoryTable import MemoryTable
+from sensorMetadata import SensorMetadata
+from memoryTable import MemoryTable
 from dataLoader import getDataDictionary
 import numpy as np
+
+metadata = SensorMetadata()
 class TaskGenerator:
     def __init__(self, dataPath) -> None:
         
@@ -10,11 +13,20 @@ class TaskGenerator:
         self.zones = self.dataDictionary.keys()
         self.megaMemory = {}
         self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
+        self.taskTypes = ["forecasting", "control"]
 
     def initMemoryTable(self):
-        for zone in self.zones:
-            self.megaMemory[zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels), sensorLabels= self.sensorLabels, data=self.dataDictionary[zone])
 
+        for taskType in self.taskTypes:
+            self.megaMemory[f"{taskType}Loss"] = {}
+            for zone in self.zones:
+                print (zone)
+                try:
+                    self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels), sensorLabels= self.sensorLabels, data=self.dataDictionary[zone])
+                    self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask(taskType)
+
+                except:
+                    pass
     def loadData(self):
         self.dataDictionary = getDataDictionary(self.dataPath)
         pass
@@ -50,7 +62,7 @@ class TaskGenerator:
         cost = []
         taskList = self.generateZonalTasks(chr)
         for zone, task in taskList.items():
-            costPerZone = self.megaMemory[f"{taskType}Loss"][zone].evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
+            costPerZone = SensorMetadata.evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
             cost.append(costPerZone)
         return np.mean(cost)
         pass
