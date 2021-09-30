@@ -6,6 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import warnings
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+from more_itertools import sliced
 warnings.filterwarnings("ignore", r"/*" )
 
 import json
@@ -18,7 +20,7 @@ testPercentage = 0.9
 resamplingFreq = "30S"
 # start_index= int(sys.argv[1].strip()) # 150
 # end_index = int(sys.argv[2].strip()) # 400
-step_size = 36
+step_size = 6
 
 
 plt.rcParams.update({  "text.usetex": True,  "font.family": "sans-serif", "font.sans-serif": ["Helvetica"]})
@@ -106,15 +108,16 @@ def splitData(rdf,  start_index, end_index):
     # x_train = rdf.iloc[:int(len(rdf)*testPercentage),:].to_numpy()
     # x_train = x_train[start_index:end_index]
     x0_train = x_train[0]
-    t_train = np.linspace(0, 1, int(len(x_train)))
+    t_train = np.linspace(0, int(len(x_train)))
 
     x_test = rdf.iloc[:,:].to_numpy()
     x0_test = rdf.iloc[0,:].to_numpy()
     """"
     check on train data
     """
-    x0_test = x_train[0]
-    t_test = np.linspace(0, 1, len(t_train))
+    x0_test = x_train[-1]
+    period = 100
+    t_test = np.linspace(int(len(x_train)), int(len(x_train))+ period)
 
     return (x_train, x0_train, t_train), (x_test, t_test, x0_test)
 
@@ -134,7 +137,7 @@ def crossValEquation(trainD, dt):
     search = GridSearchCV(
         model,
         param_grid,
-        cv=TimeSeriesSplit(n_splits=3)
+        cv=TimeSeriesSplit(n_splits=1)
     )
 
     search.fit(x_train)
@@ -144,8 +147,8 @@ def crossValEquation(trainD, dt):
     x_sim = search.best_estimator_.simulate(x0_train,t_train)
     return x_sim, search.best_estimator_
 
-def customEq(x_train, dt ):
-    x_train, x0_train, t_train = trainD
+def customEq(x_train, t_train ):
+    
     fd = ps.FiniteDifference(drop_endpoints=True)
     fd = ps.SmoothedFiniteDifference(drop_endpoints=True)
     
@@ -173,7 +176,7 @@ def customEq(x_train, dt ):
 
     model.fit(x_train, t=t_train, multiple_trajectories=True)
     model.print()
-    x_sim = model.simulate(x0_train,t_train)
+    x_sim = model.simulate(x_train,t_train)
     return x_sim, model
 
 def addDatePattern(rdf):
@@ -208,9 +211,28 @@ rdf = readData(columnList)
 rdf = addDatePattern(rdf); columnList.append("dateP")
 lossEvolution = []
 
+def chunk_data(rdf, start_index, end_index, step_size=5):
+    trainData = [] 
+    t_train=[]
+
+
+    index_slices = sliced(range(len(rdf)), step_size)
+    trainData = []
+    for index_slice in index_slices:
+        chunk = rdf.iloc[index_slice] # your dataframe chunk ready for use
+        trainData.append(chunk)
+        t_train.append(np.array(index_slice))
+    return trainData, t_train
+
 try:
     for start_index in range(0, int(len(rdf)*testPercentage), step_size):
-        
+        # import pdb; pdb.set_trace()
+        end_index = min(start_index+step_size, len(rdf)-1)
+        trainD, testD = splitData(rdf, start_index, end_index)
+
+
+    for start_index in range(0, int(len(rdf)*testPercentage), step_size):
+        import pdb; pdb.set_trace()
         end_index = min(start_index+step_size, len(rdf)-1)
 
         # start_index,end_index = 1805, 1818
@@ -228,7 +250,8 @@ try:
         # Compare SINDy-predicted derivatives with finite difference derivatives
         x_sim = model.simulate(x0_test, t_test)
         testPerf = model.score(testD[0], t=1/len(testD[0]))
-        # import pdb; pdb.set_trace()
+        # testPerf = mean_absolute_error(x_sim)
+        
         # print ("-------------DYNAMICS----------------")
         # print (f"Start/End : {start_index}/{end_index}" )
         # print (f"Model Init : {trainD[1]}" )
@@ -242,7 +265,7 @@ try:
         # exit()
 
 except KeyboardInterrupt:
-    # import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     pass
 finally:
     plt.clf()

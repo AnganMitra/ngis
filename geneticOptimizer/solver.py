@@ -7,26 +7,15 @@ from pymoo.visualization.scatter import Scatter
 import matplotlib.pyplot as plt
 from pymoo.util import plotting
 
-offlineTaskGen = TaskGenerator(dataPath)
 
 def compareChromosomes(chrA, chrB):
     distance = 0
     return distance
 
-# evaluate forecasting power of a chromosome
-def multiObjectiveScore(chromosome):
-    scoreArray = [offlineTaskGen.evaluateForecastingLoss(chromosome) , ## Forecasting error difference
-                offlineTaskGen.evaluateOperationalCost(chromosome) , ## Cost of sensors to be installed
-                offlineTaskGen.evaluateOperationalPower(chromosome),  ## power needed to run the solution 
-                offlineTaskGen.evaluateControlLoss(chromosome), ## power
-                ]
-
-    return scoreArray
-
 class sensorOptimizingProblem(Problem):
 
-    def __init__(self):
-        super().__init__(n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int)
+    def __init__(self, n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int):
+        super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu, type_var=type_var)
 
     def _evaluate(self, x, out, *args, **kwargs):
         # evaluate the fitness function for the generation 
@@ -41,11 +30,11 @@ class sensorOptimizingProblem(Problem):
         # out["G"] = x[:, 0] + x[:, 1] - 10 
         return super()._evaluate(x, out, *args, **kwargs)
 
-def returnMethod(optimizationTypeBool=True):
+def returnMethod(optimizationTypeBool=True, pop_size=20):
     method = None
     if not optimizationTypeBool:
         method = get_algorithm("ga",
-                            pop_size=20,
+                            pop_size=pop_size,
                             sampling=get_sampling("int_random"),
                             crossover=get_crossover("int_sbx", prob=1.0, eta=3.0),
                             mutation=get_mutation("int_pm", eta=3.0),
@@ -53,7 +42,7 @@ def returnMethod(optimizationTypeBool=True):
                             ) 
     else:
         method = get_algorithm("ga",
-                        pop_size=200,
+                        pop_size=pop_size,
                         sampling=get_sampling("bin_random"),
                         crossover=get_crossover("bin_hux"),
                         mutation=get_mutation("bin_bitflip"),
@@ -63,7 +52,26 @@ def returnMethod(optimizationTypeBool=True):
     return method
 
 
-problem = sensorOptimizingProblem()
+# evaluate forecasting power of a chromosome
+
+def multiObjectiveScore(chromosome):
+    scoreArray = [offlineTaskGen.evaluateAILoss(chromosome, taskType="forecasting") , ## Forecasting error difference
+                offlineTaskGen.evaluateAILoss(chromosome, taskType="control"), ## power
+                offlineTaskGen.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
+                offlineTaskGen.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
+                ]
+
+    return scoreArray
+
+
+
+offlineTaskGen = TaskGenerator(dataPath="./BKDataCleaned/")
+n_var=offlineTaskGen.numberSensors()
+n_obj = 4
+lower_limit =[0]*n_var
+upper_limit =[1]*n_var
+
+problem = sensorOptimizingProblem(n_var=n_var, n_obj=n_obj, n_constr=1, xl=lower_limit, xu=upper_limit, type_var=bool)
 algorithm = returnMethod(optimizationTypeBool=False)
 
 res = minimize(problem = problem,
