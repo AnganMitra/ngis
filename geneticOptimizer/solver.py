@@ -1,3 +1,4 @@
+from sensorMetadata import SensorMetadata
 from taskGenerator import TaskGenerator
 import numpy as np
 from pymoo.factory import get_algorithm, get_crossover, get_mutation, get_sampling
@@ -7,11 +8,10 @@ from pymoo.visualization.scatter import Scatter
 import matplotlib.pyplot as plt
 from pymoo.util import plotting
 from pymoo.algorithms.moo.nsga2 import NSGA2
+import plotly.graph_objects as go
 
-def compareChromosomes(chrA, chrB):
-    distance = 0
-    return distance
-
+SmartBuilingObject = None
+SensorMetadataObject = None 
 class sensorOptimizingProblem(Problem):
 
     def __init__(self, n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int):
@@ -26,7 +26,8 @@ class sensorOptimizingProblem(Problem):
             res.append(fitness)
         # import pdb; pdb.set_trace()
         out["F"] = np.array(res)
-        out["G"] = -np.array(res)
+        shape = out["F"].shape
+        out["G"] = np.zeros(shape)
 
         # out["F"] = - np.min(x * [3, 1], axis=1)
         # add constraints via specifying constraint(x) <=0 formula as below
@@ -58,85 +59,88 @@ def returnMethod(optimizationTypeBool=True, pop_size=20):
 # evaluate forecasting power of a chromosome
 
 def multiObjectiveScore(chromosome):
-    scoreArray = [offlineTaskGen.evaluateAILoss(chromosome, taskType="forecasting") , ## Forecasting error difference
-                offlineTaskGen.evaluateAILoss(chromosome, taskType="control"), ## power
-                # offlineTaskGen.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
-                # offlineTaskGen.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
+    scoreArray = [SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forecasting") , ## Forecasting channel 
+                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="p2a"), ## power to ambience
+                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="a2p"), ## ambience to power
+                SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
+                SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
                 ]
 
     return scoreArray
 
+class SolverBuildings:
 
+    def __init__(self, dataPath) -> None:
+        self.taskGenerator = TaskGenerator(dataPath)
+        self.n_obj = 2
+        self.n_var = len(self.taskGenerator.sensorLabels)*len(self.taskGenerator.dataDictionary.keys())
+        self.lower_limit =[0]*self.n_var
+        self.upper_limit =[1]*self.n_var
+        self.res=None
+        self.problem=None
+        self.algorithm=None
+        self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
+        pass
 
-offlineTaskGen = TaskGenerator(dataPath="./BKDataCleaned/")
-offlineTaskGen.initMemoryTable()
-n_var=len(offlineTaskGen.sensorLabels)*len(offlineTaskGen.dataDictionary.keys())
-n_obj = 2
-lower_limit =[0]*n_var
-upper_limit =[1]*n_var
+    def initMemoryLearners(self):
+        self.taskGenerator.initMemoryTable()
 
-problem = sensorOptimizingProblem(n_var=n_var, n_obj=n_obj, n_constr=1, xl=lower_limit, xu=upper_limit, type_var=bool, )
-algorithm = returnMethod(optimizationTypeBool=False)
+    def solveOptimization(self):
+        self.problem = sensorOptimizingProblem(n_var=self.n_var, n_obj=self.n_obj, n_constr=1, xl=self.lower_limit, xu=self.upper_limit, type_var=bool, )
+        self.algorithm = returnMethod(optimizationTypeBool=False)
 
-res = minimize(problem = problem,
-               algorithm = algorithm,
-               termination=('n_gen', 40),
-               seed=1,
-               save_history=True
-               )
+        self.res = minimize(problem = self.problem,
+                    algorithm = self.algorithm,
+                    termination=('n_gen', 40),
+                    seed=1,
+                    save_history=True
+                    )
 
-print("Best solution found: %s" % res.X)
-print("Function value: %s" % res.F)
-print("Constraint violation: %s" % res.CV)
+        print("Best solution found: %s" % self.res.X)
+        print("Function value: %s" % self.res.F)
+        print("Constraint violation: %s" % self.res.CV)
 
+    def plotParetoSolution(self):
+        _X = np.row_stack([a.pop.get("X") for a in self.res.history])
+        feasible = np.row_stack([a.pop.get("feasible") for a in self.res.history])[:, 0]
 
-_X = np.row_stack([a.pop.get("X") for a in res.history])
-feasible = np.row_stack([a.pop.get("feasible") for a in res.history])[:, 0]
+        plotting.plot(_X[feasible], _X[np.logical_not(feasible)], self.res.X[None,:]
+                    , labels=["Feasible", "Infeasible", "Best"])
 
-plotting.plot(_X[feasible], _X[np.logical_not(feasible)], res.X[None,:]
-              , labels=["Feasible", "Infeasible", "Best"])
+        plot = Scatter(title="Pareto Curve")
+        plot.add(self.problem.pareto_front(use_cache=False, flatten=False), plot_type="line", color="black")
+        plot.add(self.res.F, facecolor="none", edgecolor="red", alpha=0.8, s=20)
+        plot.show()
 
-plot = Scatter(title="Pareto Curve")
-plot.add(problem.pareto_front(use_cache=False, flatten=False), plot_type="line", color="black")
-plot.add(res.F, facecolor="none", edgecolor="red", alpha=0.8, s=20)
-plot.show()
+    def plotSolution(self):
+        res_data=self.res.F.T
+        fig = go.Figure(data=go.Scatter(x=res_data[0], y=res_data[1], mode="markers"))
+        fig.show()
 
+    def zonalSolutionAnalysis(self):
+        start_index = 0
+        inferenceDict = []
+        for key,value in self.taskGenerator.dataDictionary.items():
+            end_index= start_index+len(value.columns)
+            chrEncoding = self.res.X[0][start_index:end_index]
+            numSensors = sum(chrEncoding)
+            inferenceDict.append({
+                "zone" : key,
+                "numSensors" : numSensors,
+                "sensorsSaved" : np.round(1 - numSensors/(end_index-start_index),2),
+                "requiredSensors" : [self.sensorLabels[i] for i,v in enumerate(chrEncoding) if v > 0],
+                "approximatedSensors" : [self.sensorLabels[i] for i,v in enumerate(chrEncoding) if v < 1]
+            })
+            start_index = end_index
+        print (inferenceDict)
+        print (f"Sensors used {sum(self.res.X[0])} out of {(len(self.res.X[0]))}" )
+        return inferenceDict
 
-# import numpy as np
-# from pymoo import algorithms
-# from pymoo.optimize import minimize
-# from pymoo.core.problem import Problem
-# from pymoo.factory import get_algorithm, get_crossover, get_mutation, get_sampling
-# import pymoo.algorithms.moo.nsga2 as nsga2
-# import plotly.graph_objects as go
+    
+SensorMetadataObject = SensorMetadata()
+SmartBuilingObject = SolverBuildings(dataPath="./BKDataCleaned/")
 
-# class ProblemWrapper(Problem):
-
-#     def _evaluate(self, x, out, *args, **kwargs):
-#         res = []
-#         for design in x:
-#             res.append
-
-#         out["F"] = np.array(res)
-#         return super()._evaluate(x, out, *args, **kwargs)
-
-# sensorList = []
-
-
-# numVar = len(sensorList)
-# lower_limit =[0]*numVar
-# upper_limit =[1]*numVar
-# problem = ProblemWrapper(n_var=numVar, n_obj=2, xl=lower_limit, xu=upper_limit )
-
-# algorithm = nsga2(pop_size=100)
-# stop_criteria = ("n_gen",100)
-
-# results = minimize(
-#     problem=problem,
-#     algorithm= algorithm,
-#     termination= stop_criteria
-# )
-
-# res_data=results.F.T
-# fig = go.Figure(data=go.Scatter(x=res_data[0], y=res_data[1], mode="markers"))
-# fig.show()
+SmartBuilingObject.initMemoryLearners()
+SmartBuilingObject.solveOptimization()
+SmartBuilingObject.zonalSolutionAnalysis()
+SmartBuilingObject.plotSolution()

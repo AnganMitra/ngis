@@ -13,7 +13,7 @@ class TaskGenerator:
         self.zones = self.dataDictionary.keys()
         self.megaMemory = {}
         self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
-        self.taskTypes = ["forecasting", "control"]
+        self.taskTypes = ["forecasting", "p2a", "a2p"]
 
     def initMemoryTable(self):
 
@@ -58,12 +58,5 @@ class TaskGenerator:
         return np.mean(loss)
         pass
     
-    def evaluateBusiness(self, chr, taskType): ## Forecasting error difference
-        cost = []
-        taskList = self.generateZonalTasks(chr)
-        for zone, task in taskList.items():
-            costPerZone = SensorMetadata.evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
-            cost.append(costPerZone)
-        return np.mean(cost)
-        pass
+
     
