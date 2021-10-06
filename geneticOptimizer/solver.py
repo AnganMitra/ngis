@@ -136,11 +136,21 @@ class SolverBuildings:
         print (f"Sensors used {sum(self.res.X[0])} out of {(len(self.res.X[0]))}" )
         return inferenceDict
 
-    
-SensorMetadataObject = SensorMetadata()
-SmartBuilingObject = SolverBuildings(dataPath="./BKDataCleaned/")
+def initVirtualSenseField(dataPath="./BKDataCleaned/"):
+    global SensorMetadataObject
+    global SmartBuilingObject
+    SensorMetadataObject = SensorMetadata()
+    SmartBuilingObject = SolverBuildings(dataPath)
 
-SmartBuilingObject.initMemoryLearners()
-SmartBuilingObject.solveOptimization()
-SmartBuilingObject.zonalSolutionAnalysis()
-SmartBuilingObject.plotSolution()
+def updateVirtualSenseField():
+    SmartBuilingObject.initMemoryLearners()
+    SmartBuilingObject.solveOptimization()
+
+def zonalAnalysis():
+    SmartBuilingObject.zonalSolutionAnalysis()
+    SmartBuilingObject.plotSolution()
+
+
+def reloadResults():
+
+    return

@@ -1,13 +1,5 @@
-
-from pdb import set_trace
-import pandas as pd
-import os
-import sys
-import matplotlib.pyplot as plt 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
-import numpy as np
 import argparse as agp
-
+import solver as VirtualSensorField
 expMode = {
     "45f": "floor45",
     "67f" : "floor67",
@@ -19,7 +11,12 @@ expMode = {
     "5f" : "floor5",
     "7f" : "floor7"
 }
-taskType = ["resultAnalysis", "virtualFieldGen", "trackPareto"]
+taskType = {
+    "sensLoc" : "Get Optimal Sensor Locations", 
+    "vsfGen": "Generate Virtual Sensor Field" ,
+    "zonAnaly" : "Analyse accuracy, capex/opex"
+}
+
 if __name__=="__main__":
 
 
@@ -28,9 +25,9 @@ if __name__=="__main__":
     parser.add_argument("-i", "--input_dir", help="path of the input data folder")
     parser.add_argument("-ts", "--start_index", help="Starting Index Req Integer")
     parser.add_argument("-te", "--end_index", help="End Index Req Integer")
-    parser.add_argument("-g", "--groupBy", help="Graph Type, options are random, zonal, domain")
+    parser.add_argument("-g", "--groupBy", help="Group sensors by -- random, zone, domain")
     parser.add_argument("-c", "--config", help="Experiment keys available -- "+str(expMode))
-    parser.add_argument("-tk", "--task", help=str(taskType ))
+    parser.add_argument("-tk", "--task", help="Task types available -- "+str(taskType ))
     args = vars(parser.parse_args())
     
     try:
@@ -64,5 +61,18 @@ if __name__=="__main__":
         # print ("end_index : ", end_index)
     except:
         pass
-
     
+    try:
+        task = args['task']
+        # print ("task : ",task)
+    except:
+        pass
+    
+    VirtualSensorField.initVirtualSenseField(input_dir)
+    VirtualSensorField.reloadResults()
+    if task == "vsfGen": 
+        VirtualSensorField.updateVirtualSenseField()
+    # elif task == "sensLoc":
+    #     VirtualSensorField.resultAnalyse()
+    elif task == "zonAnaly":
+        VirtualSensorField.zonalAnalysis()
