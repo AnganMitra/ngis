@@ -7,9 +7,10 @@ import numpy as np
 
 metadata = SensorMetadata()
 class TaskGenerator:
-    def __init__(self, dataPath, start_index, end_index, floors, groupBy) -> None:
+    def __init__(self, dataPath, start_index, end_index, floors, groupBy, output_path) -> None:
         
         self.dataPath = dataPath
+        self.output_path=output_path
         self.dataDictionary = None
         self.sensorLabels =  None #["ACPower","lightPower","appPower","temperature","humidity","lux"]
         if groupBy =="zone":
@@ -33,7 +34,7 @@ class TaskGenerator:
                 print (zone)
                 
                 try:
-                    self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels[zone]), sensorLabels= self.sensorLabels[zone], data=self.dataDictionary[zone])
+                    self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels[zone]), sensorLabels= self.sensorLabels[zone], data=self.dataDictionary[zone], output_dir=self.output_path)
                     self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask(taskType)
 
                 except Error as err:

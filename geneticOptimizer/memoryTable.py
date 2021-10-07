@@ -3,8 +3,9 @@ import numpy as np
 from learner import Learner
 import pandas as pd
 class MemoryTable:
-    def __init__(self,key,numSensor,sensorLabels, data) -> None:
+    def __init__(self,key,numSensor,sensorLabels, data, output_dir) -> None:
         self.key = key
+        self.output_dir=output_dir
         self.numSensor = numSensor
         self.table = np.zeros((numSensor,numSensor))
         self.sensorLabels = sensorLabels
@@ -29,7 +30,7 @@ class MemoryTable:
         # print (self.table)
         self.table = pd.DataFrame(self.table)
         self.table.columns= self.sensorLabels
-        self.table.to_csv("./PaperAnalysis/"+self.key+".csv")
+        self.table.to_csv(self.output_dir+self.key+".csv")
     
 
     def evaluate(self,approximatedSet, supportSet):

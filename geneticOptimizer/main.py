@@ -1,4 +1,5 @@
 import argparse as agp
+import os
 import solver as VirtualSensorField
 expMode = {
     "45f": [4,5],
@@ -23,6 +24,7 @@ if __name__=="__main__":
     parser = agp.ArgumentParser()
 
     parser.add_argument("-i", "--input_dir", help="path of the input data folder")
+    parser.add_argument("-o", "--output_dir", help="path of the output data folder")
     parser.add_argument("-ts", "--start_index", help="Starting Index Req Integer")
     parser.add_argument("-te", "--end_index", help="End Index Req Integer")
     parser.add_argument("-g", "--groupBy", help="Group sensors by -- random, zone, domain")
@@ -36,7 +38,7 @@ if __name__=="__main__":
     except:
         pass
     
-
+    
     try:
         expInput = args['config']
         # print ("config : ",config)
@@ -68,8 +70,15 @@ if __name__=="__main__":
         # print ("task : ",task)
     except:
         pass
-    
-    VirtualSensorField.initVirtualSenseField(dataPath=input_dir, start_index =start_index, end_index=end_index, floors=expMode[expInput], groupBy=groupBy)
+
+    try:
+        output_dir = args['output_dir']
+        output_dir +=f"{expInput}-{groupBy}/"
+        print ("output_dir : ", output_dir)
+        os.mkdir(output_dir)
+    except:
+        pass
+    VirtualSensorField.initVirtualSenseField(dataPath=input_dir, start_index =start_index, end_index=end_index, floors=expMode[expInput], groupBy=groupBy, output_path=output_dir)
     VirtualSensorField.reloadResults()
     if task == "vsfGen": 
         VirtualSensorField.createVirtualSenseField()
