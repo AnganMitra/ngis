@@ -70,8 +70,8 @@ def multiObjectiveScore(chromosome):
 
 class SolverBuildings:
 
-    def __init__(self, dataPath) -> None:
-        self.taskGenerator = TaskGenerator(dataPath)
+    def __init__(self, dataPath, start_index =0, end_index=100, floors=[4,5,6,7], groupBy="zone") -> None:
+        self.taskGenerator = TaskGenerator(dataPath, start_index, end_index, floors, groupBy)
         self.n_obj = 2
         self.n_var = len(self.taskGenerator.sensorLabels)*len(self.taskGenerator.dataDictionary.keys())
         self.lower_limit =[0]*self.n_var
@@ -136,15 +136,21 @@ class SolverBuildings:
         print (f"Sensors used {sum(self.res.X[0])} out of {(len(self.res.X[0]))}" )
         return inferenceDict
 
-def initVirtualSenseField(dataPath="./BKDataCleaned/"):
+def initVirtualSenseField(dataPath, start_index , end_index, floors, groupBy):
     global SensorMetadataObject
     global SmartBuilingObject
     SensorMetadataObject = SensorMetadata()
-    SmartBuilingObject = SolverBuildings(dataPath)
+    SmartBuilingObject = SolverBuildings(dataPath, start_index, end_index, floors, groupBy)
 
-def updateVirtualSenseField():
+def createVirtualSenseField():
     SmartBuilingObject.initMemoryLearners()
+    # SmartBuilingObject.solveOptimization()
+    # SmartBuilingObject.zonalSolutionAnalysis()
+    # SmartBuilingObject.plotSolution()
+
+def optimizeVirtualSenseField():
     SmartBuilingObject.solveOptimization()
+    pass
 
 def zonalAnalysis():
     SmartBuilingObject.zonalSolutionAnalysis()

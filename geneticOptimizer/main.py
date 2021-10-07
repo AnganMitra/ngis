@@ -1,18 +1,18 @@
 import argparse as agp
 import solver as VirtualSensorField
 expMode = {
-    "45f": "floor45",
-    "67f" : "floor67",
-    "456f" : "floor456",
-    "567f" : "floor567",
-    "4567f": "floor4567",
-    "4f" : "floor4",
-    "6f" : "floor6",
-    "5f" : "floor5",
-    "7f" : "floor7"
+    "45f": [4,5],
+    "67f" : [6,7],
+    "456f" : [4,5,6],
+    "567f" : [5,6,7],
+    "4567f": [4,5,6,7],
+    "4f" : [4],
+    "6f" : [6],
+    "5f" : [5],
+    "7f" : [7]
 }
 taskType = {
-    "sensLoc" : "Get Optimal Sensor Locations", 
+    "optVsf" : "Get Optimal Sensor Locations", 
     "vsfGen": "Generate Virtual Sensor Field" ,
     "zonAnaly" : "Analyse accuracy, capex/opex"
 }
@@ -40,6 +40,7 @@ if __name__=="__main__":
     try:
         expInput = args['config']
         # print ("config : ",config)
+        
     except:
         pass
 
@@ -68,11 +69,13 @@ if __name__=="__main__":
     except:
         pass
     
-    VirtualSensorField.initVirtualSenseField(input_dir)
+    VirtualSensorField.initVirtualSenseField(dataPath=input_dir, start_index =start_index, end_index=end_index, floors=expMode[expInput], groupBy=groupBy)
     VirtualSensorField.reloadResults()
     if task == "vsfGen": 
-        VirtualSensorField.updateVirtualSenseField()
-    # elif task == "sensLoc":
-    #     VirtualSensorField.resultAnalyse()
+        VirtualSensorField.createVirtualSenseField()
+    else:
+        VirtualSensorField.reloadResults()
+    if task == "optVsf":
+        VirtualSensorField.optimizeVirtualSenseField()
     elif task == "zonAnaly":
         VirtualSensorField.zonalAnalysis()

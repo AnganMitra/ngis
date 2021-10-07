@@ -15,7 +15,7 @@ class Learner:
         # import pdb; pdb.set_trace()
         model, score = self.train(X.values.reshape(-1,1),self.data[yTarget].values.reshape(-1,1))
         self.modelsLearned[f"{yTarget}|{support}"]= model
-        print ("Model Recorded ....", f"{yTarget}|{support}" )
+        print ("Model Recorded ....", f"{yTarget} =  f( {support} )" )
         return score
         pass
 

@@ -1,35 +1,45 @@
+from copy import Error
+import pdb
 from sensorMetadata import SensorMetadata
 from memoryTable import MemoryTable
-from dataLoader import getDataDictionary
+from dataLoader import getDomainGroupData, getRandomGroupData, getSpatialGroupData
 import numpy as np
 
 metadata = SensorMetadata()
 class TaskGenerator:
-    def __init__(self, dataPath) -> None:
+    def __init__(self, dataPath, start_index, end_index, floors, groupBy) -> None:
         
         self.dataPath = dataPath
         self.dataDictionary = None
-        self.loadData()
-        self.zones = self.dataDictionary.keys()
+        self.sensorLabels =  None #["ACPower","lightPower","appPower","temperature","humidity","lux"]
+        if groupBy =="zone":
+            self.dataDictionary, self.sensorLabels = getSpatialGroupData(self.dataPath, start_index, end_index, floors,)
+        elif groupBy =="domain":
+            self.dataDictionary, self.sensorLabels = getDomainGroupData(self.dataPath, start_index, end_index, floors,)
+        elif groupBy =="random":
+            self.dataDictionary, self.sensorLabels = getRandomGroupData(self.dataPath, start_index, end_index, floors,)
+        else:
+            assert(Error)
+        self.groups = [i for i in self.dataDictionary.keys()]
         self.megaMemory = {}
-        self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
+        
         self.taskTypes = ["forecasting", "p2a", "a2p"]
 
     def initMemoryTable(self):
 
         for taskType in self.taskTypes:
             self.megaMemory[f"{taskType}Loss"] = {}
-            for zone in self.zones:
+            for zone in self.groups:
                 print (zone)
+                
                 try:
-                    self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels), sensorLabels= self.sensorLabels, data=self.dataDictionary[zone])
+                    self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels[zone]), sensorLabels= self.sensorLabels[zone], data=self.dataDictionary[zone])
                     self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask(taskType)
 
-                except:
+                except Error as err:
+                    print (err)
+                    pdb.set_trace()
                     pass
-    def loadData(self):
-        self.dataDictionary = getDataDictionary(self.dataPath)
-        pass
 
     def loadTask(self):
         
