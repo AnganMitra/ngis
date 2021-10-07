@@ -13,7 +13,7 @@ class MemoryTable:
         self.data = data
         pass
     
-    def populateBySingleTask(self, task):
+    def populateBySingleTask(self):
         # pdb.set_trace()
         for support in range(self.numSensor):
             for approximated in range(self.numSensor):
@@ -38,7 +38,7 @@ class MemoryTable:
         # pdb.set_trace()
         for i in approximatedSet:
             for j in supportSet:
-                loss.append(self.table[i,j])
+                loss.append(self.table.iloc[i,j])
 
         return np.sum(loss)
         pass

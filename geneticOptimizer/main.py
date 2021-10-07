@@ -79,11 +79,11 @@ if __name__=="__main__":
     except:
         pass
     VirtualSensorField.initVirtualSenseField(dataPath=input_dir, start_index =start_index, end_index=end_index, floors=expMode[expInput], groupBy=groupBy, output_path=output_dir)
-    VirtualSensorField.reloadResults()
+    
     if task == "vsfGen": 
         VirtualSensorField.createVirtualSenseField()
     else:
-        VirtualSensorField.reloadResults()
+        VirtualSensorField.createVirtualSenseField()
     if task == "optVsf":
         VirtualSensorField.optimizeVirtualSenseField()
     elif task == "zonAnaly":

@@ -17,21 +17,32 @@ class sensorOptimizingProblem(Problem):
     def __init__(self, n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int):
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu, type_var=type_var,)
 
+    def computeConstraintViolation(self,chromosome): # per chromosome
+        coverageMiss = 0
+        if sum(chromosome)==0: coverageMiss=1000
+        stride = len(SmartBuilingObject.taskGenerator.sensorLabels)
+        # print(stride)
+        for index in range(0, len(chromosome),stride ):
+            coverageMiss += 1 if sum( chromosome[index: index+ stride]) == 0 else 0
+
+        return coverageMiss
+
     def _evaluate(self, x, out, *args, **kwargs):
         # evaluate the fitness function for the generation 
-        res = []
+        resFitness = []
+        cvError =[]
         for chromosome in x:
             # evaluate chromosome fitness
             fitness = multiObjectiveScore(chromosome)
-            res.append(fitness)
+            error = self.computeConstraintViolation(chromosome)
+            resFitness.append(fitness)
+            cvError.append(error)
         # import pdb; pdb.set_trace()
-        out["F"] = np.array(res)
-        shape = out["F"].shape
-        out["G"] = np.zeros(shape)
+        out["F"] = np.array(resFitness)
+        print (out["F"])
+        # shape = out["F"].shape
+        out["G"] =  np.array(cvError)
 
-        # out["F"] = - np.min(x * [3, 1], axis=1)
-        # add constraints via specifying constraint(x) <=0 formula as below
-        # out["G"] = x[:, 0] + x[:, 1] - 10 
         return super()._evaluate(x, out, *args, **kwargs)
 
 def returnMethod(optimizationTypeBool=True, pop_size=20):
@@ -59,11 +70,13 @@ def returnMethod(optimizationTypeBool=True, pop_size=20):
 # evaluate forecasting power of a chromosome
 
 def multiObjectiveScore(chromosome):
-    scoreArray = [SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forecasting") , ## Forecasting channel 
-                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="p2a"), ## power to ambience
-                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="a2p"), ## ambience to power
+    scoreArray = [SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
+                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="p2a"), ## power to ambience
+                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="a2p"), ## ambience to power
                 SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
                 SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
+                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
+                
                 ]
 
     return scoreArray
@@ -79,7 +92,7 @@ class SolverBuildings:
         self.res=None
         self.problem=None
         self.algorithm=None
-        self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
+        # self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
         pass
 
     def initMemoryLearners(self):

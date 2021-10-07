@@ -24,7 +24,7 @@ class TaskGenerator:
         self.groups = [i for i in self.dataDictionary.keys()]
         self.megaMemory = {}
         
-        self.taskTypes = ["forecasting", "p2a", "a2p"]
+        self.taskTypes = ["prediction"]
 
     def initMemoryTable(self):
 
@@ -35,7 +35,7 @@ class TaskGenerator:
                 
                 try:
                     self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels[zone]), sensorLabels= self.sensorLabels[zone], data=self.dataDictionary[zone], output_dir=self.output_path)
-                    self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask(taskType)
+                    self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask()
 
                 except Error as err:
                     print (err)

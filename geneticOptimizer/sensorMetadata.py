@@ -2,27 +2,35 @@ from matplotlib import markers
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+from config import sensorLibrary
+
 class SensorMetadata:
     def __init__(self) -> None:
-        self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
-        self.costPurchase  = np.array([0,5,0.5,0.5,0.5,0.5,0.5])
-        self.powerConsumption = np.array([200,100,200,30,30,30])
-        pass
-
-    def loadDetails(self, dataPath):
+        self.sensorLabels = [i for i in sensorLibrary.keys()]
+        self.costVector = np.array([i["cost"] for i in sensorLibrary.values()]).reshape(1,-1)
+        self.powerVector = np.array([i["power"] for i in sensorLibrary.values()]).reshape(1,-1)
+        # self.costPurchase  = np.array([0,5,0.5,0.5,0.5,0.5,0.5])
+        # self.powerConsumption = np.array([200,100,200,30,30,30])
 
         pass
 
     def evaluateBusiness(self, chromosome, taskType="opCost"):
-        metric = 0
+        metric = []
+        # if taskType=="opCost":
+        # import pdb; pdb.set_trace()
         for start_index in range(0, len(chromosome), len(self.sensorLabels)):
             end_index=start_index+len(self.sensorLabels)
-            if taskType=="opCost":
-                metric += self.powerConsumption*np.array(chromosome[start_index:end_index])
-            elif taskType == "installCost":
-                metric += self.powerConsumption*np.array(chromosome[start_index:end_index])
-        
-        return metric
+            
+            try:
+                if taskType=="opCost":
+                    metric.append(np.dot(self.costVector,np.array(chromosome[start_index:end_index]))[0])
+                elif taskType == "installCost":
+                    metric.append(np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0])
+            except:
+                import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
+        print (chromosome, metric)
+        return sum(metric)
 
 
     def plotDataCapacity(self):
