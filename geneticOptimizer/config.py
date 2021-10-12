@@ -1,28 +1,28 @@
 
 sensorLibrary = {
     "ACPower":  {
-        "cost" : 5,
-        "power" : 5,
+        "cost" : 80,
+        "power" : 0.5,
     },
     "lightPower":  {
-        "cost" : 4,
-        "power" : 6,
+        "cost" : 80,
+        "power" : 0.6,
     },
     "appPower":  {
-        "cost" : 8,
-        "power" : 5,
+        "cost" : 100,
+        "power" : 0.5,
     },
     "temperature":  {
-        "cost" : 3.5,
-        "power" : 3,
+        "cost" : 35,
+        "power" : 0.3,
     },
     "humidity":  {
-        "cost" : 5.3,
-        "power" : 3,
+        "cost" : 50,
+        "power" : 0.3,
     },
     "lux":  {
-        "cost" : 3.6,
-        "power" : 3,
+        "cost" : 35,
+        "power" : 0.3,
     }
 
 }

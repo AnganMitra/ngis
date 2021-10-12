@@ -18,6 +18,7 @@ class sensorOptimizingProblem(Problem):
 
     def __init__(self, n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int):
         super().__init__(n_var=n_var, n_obj=n_obj, n_constr=n_constr, xl=xl, xu=xu, type_var=type_var,)
+        print(n_var)
 
     def computeConstraintViolation(self,chromosome): # per chromosome
         coverageMiss = 0
@@ -72,11 +73,12 @@ def returnMethod(optimizationTypeBool=True, pop_size=20):
 # evaluate forecasting power of a chromosome
 
 def multiObjectiveScore(chromosome):
-    scoreArray = [SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
-                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="hf"), ## power to ambience
-                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="hb"), ## ambience to power
-                SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
-                SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
+    scoreArray = [ 
+                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
+                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forward"), ## support to approximated
+                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="backward"), ## approximated to support
+                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
+                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
                 # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
                 
                 ]
@@ -86,9 +88,15 @@ def multiObjectiveScore(chromosome):
 class SolverBuildings:
 
     def __init__(self, dataPath, start_index =0, end_index=100, floors=[4,5,6,7], groupBy="zone", output_path="./paperAnalysis/") -> None:
+        
         self.taskGenerator = TaskGenerator(dataPath, start_index, end_index, floors, groupBy, output_path)
         self.n_obj = 2
-        self.n_var = len(self.taskGenerator.sensorLabels)*len(self.taskGenerator.dataDictionary.keys())
+        # import pdb; pdb.set_trace()
+        self.membersInaGroup = max([len(v.columns) for i,v in self.taskGenerator.dataDictionary.items()]) #len(self.taskGenerator.dataDictionary['ACPower'].columns)
+        self.numGroups = len(self.taskGenerator.sensorLabels)
+        self.n_var = self.numGroups * self.membersInaGroup  
+        print ("n_var for building optimization =================>",self.n_var); #exit()
+        #  len(self.taskGenerator.sensorLabels)*len(self.taskGenerator.dataDictionary.keys())
         self.lower_limit =[0]*self.n_var
         self.upper_limit =[1]*self.n_var
         self.res=None

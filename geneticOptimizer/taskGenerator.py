@@ -24,7 +24,7 @@ class TaskGenerator:
         self.groups = [i for i in self.dataDictionary.keys()]
         self.megaMemory = {}
         
-        self.taskTypes = ["prediction"]
+        self.taskTypes = ["prediction", "forward", "backward"]
 
     def initMemoryTable(self):
 
@@ -64,7 +64,14 @@ class TaskGenerator:
         loss = []
         taskList = self.generateZonalTasks(chr)
         for zone, task in taskList.items():
-            lossPerZone = self.megaMemory[f"{taskType}Loss"][zone].evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
+            lossPerZone = None
+            # import pdb; pdb.set_trace()
+            if taskType == "forward":
+                lossPerZone = self.megaMemory[f"{taskType}Loss"][zone].evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
+            elif taskType == "backward":
+                lossPerZone = self.megaMemory[f"{taskType}Loss"][zone].evaluate(approximatedSet=task["supportSet"], supportSet=task["approximatedSet"])
+            else:
+                lossPerZone = self.megaMemory[f"{taskType}Loss"][zone].evaluate(approximatedSet=task["approximatedSet"], supportSet=task["supportSet"])
             loss.append(lossPerZone)
         return np.mean(loss)
         pass
