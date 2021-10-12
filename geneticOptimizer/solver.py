@@ -73,8 +73,8 @@ def returnMethod(optimizationTypeBool=True, pop_size=20):
 
 def multiObjectiveScore(chromosome):
     scoreArray = [SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
-                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="p2a"), ## power to ambience
-                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="a2p"), ## ambience to power
+                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="hf"), ## power to ambience
+                # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="hb"), ## ambience to power
                 SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
                 SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
                 # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
@@ -95,6 +95,7 @@ class SolverBuildings:
         self.problem=None
         self.algorithm=None
         self.output_path=output_path
+        
         # self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
         pass
 
@@ -134,18 +135,20 @@ class SolverBuildings:
         # fig.show()
         
         accuracy = res_data[0] 
-        accuracy = (accuracy-min(accuracy))/(max(accuracy)- min(accuracy))
+        # accuracy = (accuracy-min(accuracy))/(max(accuracy)- min(accuracy))
         opCost = res_data[2]
-        opCost = (opCost-min(opCost))/(max(opCost)- min(opCost))
+        # opCost = (opCost-min(opCost))/(max(opCost)- min(opCost))
         installCost =  res_data[1]
         sol = pd.DataFrame.from_dict({"accuracy":accuracy, "opCost":opCost, "installCost":installCost}).sort_values(by='installCost')
-        
-        plt.plot(sol.installCost, sol.opCost, marker="+", label =   "operating power")
-        plt.plot(sol.installCost, sol.accuracy, marker="^", label = "aprroximation error")
-        plt.xlabel("Sensor Cost")
-        plt.legend()
+        sol.to_csv(self.output_path+"tradeoff.csv")
+        chromosome = pd.DataFrame(self.res.X)
+        chromosome.to_csv(self.output_path+"chromosomes.csv")
+        # plt.plot(sol.installCost, sol.opCost, marker="+", label =   "operating power")
+        # plt.plot(sol.installCost, sol.accuracy, marker="^", label = "aprroximation error")
+        # plt.xlabel("Sensor Cost")
+        # plt.legend()
         # import pdb; pdb.set_trace()
-        plt.savefig(self.output_path+"tradeoff.pdf", format="pdf", bbox_inches="tight")
+        # plt.savefig(self.output_path+"tradeoff.pdf", format="pdf", bbox_inches="tight")
         # plt.show()
 
     def zonalSolutionAnalysis(self):
@@ -170,7 +173,7 @@ class SolverBuildings:
 def initVirtualSenseField(dataPath, start_index , end_index, floors, groupBy, output_path):
     global SensorMetadataObject
     global SmartBuilingObject
-    SensorMetadataObject = SensorMetadata()
+    SensorMetadataObject = SensorMetadata(groupBy)
     SmartBuilingObject = SolverBuildings(dataPath, start_index, end_index, floors, groupBy,output_path)
 
 def createVirtualSenseField():

@@ -5,10 +5,11 @@ from mpl_toolkits import mplot3d
 from config import sensorLibrary
 
 class SensorMetadata:
-    def __init__(self) -> None:
+    def __init__(self, groupby="zone") -> None:
         self.sensorLabels = [i for i in sensorLibrary.keys()]
         self.costVector = np.array([i["cost"] for i in sensorLibrary.values()]).reshape(1,-1)
         self.powerVector = np.array([i["power"] for i in sensorLibrary.values()]).reshape(1,-1)
+        self.groupby = groupby
         # self.costPurchase  = np.array([0,5,0.5,0.5,0.5,0.5,0.5])
         # self.powerConsumption = np.array([200,100,200,30,30,30])
 
@@ -23,9 +24,21 @@ class SensorMetadata:
             
             try:
                 if taskType=="opCost":
-                    metric.append(np.dot(self.costVector,np.array(chromosome[start_index:end_index]))[0])
+                    opCost = -1000000
+
+                    # import pdb; pdb.set_trace()
+                    if self.groupby == "zone":
+                        opCost = np.dot(self.costVector,np.array(chromosome[start_index:end_index]))[0]
+                    elif self.groupby == "domain":
+                        opCost =  sum(sum(chromosome[start_index:end_index])*self.costVector[int(start_index/len(self.sensorLabels))])
+                    metric.append(opCost)
                 elif taskType == "installCost":
-                    metric.append(np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0])
+                    installCost = -1000000
+                    if self.groupby == "zone":
+                        installCost = np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0]
+                    elif self.groupby == "domain":
+                        installCost =  sum(sum(chromosome[start_index:end_index])*self.powerVector[int(start_index/len(self.sensorLabels))])
+                    metric.append(installCost)
             except:
                 # import pdb; pdb.set_trace()
                 pass

@@ -74,11 +74,15 @@ if __name__=="__main__":
     for file in os.listdir(output_dir):
         if file.endswith(".csv"):
             key = file.split(".")[0]
-            rdf[key]= pd.read_csv(output_dir+file, )
-            rdf[key][rdf[key]<0] = 0
-            rdf[key].index = rdf[key].columns[1:]
-            rdf[key]=rdf[key].drop('Unnamed: 0', axis = 1)
-            rdf[key]=rdf[key][sorted(rdf[key].columns)].sort_index(key=lambda x: x.str.lower())
+            try:
+                rdf[key]= pd.read_csv(output_dir+file, )
+                # import pdb; pdb.set_trace()
+                rdf[key][rdf[key]<0] = 0
+                rdf[key].index = rdf[key].columns[1:]
+                rdf[key]=rdf[key].drop('Unnamed: 0', axis = 1)
+                rdf[key]=rdf[key][sorted(rdf[key].columns)].sort_index(key=lambda x: x.str.lower())
+            except:
+                print (file+" processing error.... ")
         # import pdb; pdb.set_trace()
     for key in rdf.keys(): plotPredPerfbyKey(key, output_path=output_dir)
 

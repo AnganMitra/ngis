@@ -4,4 +4,4 @@ venv/
 */.DS_Store
 */*/.DS_Store
 equationalDecomposition/
-paperAnalysis/
+# paperAnalysis/
