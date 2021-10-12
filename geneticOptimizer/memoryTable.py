@@ -35,10 +35,18 @@ class MemoryTable:
 
     def evaluate(self,approximatedSet, supportSet):
         loss = []
-        # pdb.set_trace()
+        # pdb.set_trace()  # net loss 
         for i in approximatedSet:
+            lossFromApproximation= []
+            if len(supportSet)==0:break
             for j in supportSet:
-                loss.append(self.table.iloc[i,j])
-
-        return np.sum(loss)
-        pass
+                lossFromApproximation.append(self.table.iloc[i,j])
+            # print (lossFromApproximation)
+            loss.append(min(lossFromApproximation))
+        try:
+            loss = np.sum(loss)
+        except:
+            loss = 10000
+        finally:
+            return loss
+        # pass

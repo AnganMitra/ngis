@@ -27,7 +27,7 @@ def plotDoubleAxisFig(t,data1,data2, xlabel ="", ylabel = "", y2label = ""):
 
 filePath = "./paperAnalysis/"
 expMode = "234567f"
-folderOptions = [f"{expMode}-domain",f"{expMode}-zone",]
+folderOptions = [f"{expMode}-domain",]  # f"{expMode}-domain-run0-identicalConf"
 chromosomes={}
 tradeOff = {}
 for expOutput in folderOptions:
@@ -35,46 +35,66 @@ for expOutput in folderOptions:
     tradeOff[expOutput]=pd.read_csv(filePath+expOutput+"/tradeoff.csv")
 
 filePath +="paperFigures/"
-# t = np.arange(0.01, 10.0, 0.01)
-# data1 = np.exp(t)
-# data2 = np.sin(2 * np.pi * t)  "accuracy":accuracy, "powerConsumed":opCost, "installCost":installCost, "noOfSens"
-# 
+
+
 expOutput =folderOptions[0]
 tradeOff[expOutput]=tradeOff[expOutput].sort_values(by='noOfSens')
+try:
+    # import pdb; pdb.set_trace()
+    tradeOff[expOutput]["forward"].plot()
+    plt.xlabel="Number of Sensors"
+    plt.ylabel="Forward (MSE) "
+    plt.savefig(filePath+"tradeoffForwardSensor.png", dpi=200)
+    # plt.show()
+    plt.clf()
+    print ("tradeoffForwardSensor    .....")
+except:
+    print ("tradeoffForwardSensor    ..XXXXXXXX...")
 
-# plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
-#         data1 = tradeOff[expOutput]["forward"] ,
-#         data2=tradeOff[expOutput]["backward"],
-#         xlabel="Number of Sensors",
-#         ylabel="Forward (MSE) ",
-#         y2label="Backward (MSE) "
-#         )
-# plt.savefig(filePath+"tradeoffForwardBackward.png", dpi=200)
-# # plt.show()
-# plt.clf()
+try:
+    plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
+            data1 = tradeOff[expOutput]["forward"] ,
+            data2=tradeOff[expOutput]["backward"],
+            xlabel="Number of Sensors",
+            ylabel="Forward (MSE) ",
+            y2label="Backward (MSE) "
+            )
+    plt.savefig(filePath+"tradeoffForwardBackward.png", dpi=200)
+    # plt.show()
+    plt.clf()
+    print ("tradeoffForwardBackward    .....")
+except:
+    print ("tradeoffForwardBackward    ..XXXXXXXX...")
+
+try:
+    plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
+            data1 = tradeOff[expOutput]["forward"] ,
+            data2=tradeOff[expOutput]["power"],
+            xlabel="Number of Sensors",
+            ylabel="Forward (MSE)",
+            y2label="powerConsumed"
+            )
+    plt.savefig(filePath+"tradeoffForwardPower.png", dpi=200)
+    plt.clf()
+    print ("tradeoffForwardPower    .....")
+except:
+    print ("tradeoffForwardPower    ..XXXXXXXX...")
 
 
-plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
-        data1 = tradeOff[expOutput]["forward"] ,
-        data2=tradeOff[expOutput]["power"],
-        xlabel="Number of Sensors",
-        ylabel="Forward (MSE)",
-        y2label="powerConsumed"
-        )
-plt.savefig(filePath+"tradeoffForwardPower.png", dpi=200)
-plt.clf()
-
-
-plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
-        data1 = tradeOff[expOutput]["forward"] ,
-        data2=tradeOff[expOutput]["installCost"],
-        xlabel="Number of Sensors",
-        ylabel="Forward (MSE) ",
-        y2label="installCost ($) "
-        )
-# plt.show()
-plt.savefig(filePath+"tradeoffForwardCost.png", dpi=200)
-plt.clf()
+try:
+    plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
+            data1 = tradeOff[expOutput]["forward"] ,
+            data2=tradeOff[expOutput]["installCost"],
+            xlabel="Number of Sensors",
+            ylabel="Forward (MSE) ",
+            y2label="installCost ($) "
+            )
+    # plt.show()
+    plt.savefig(filePath+"tradeoffForwardCost.png", dpi=200)
+    print ("tradeoffForwardCost    .....")
+    plt.clf()
+except:
+    print ("tradeoffForwardCost    ..XXXXXXXX...")
 
 # chromosomes[expOutput].plot()
 chromosomes[expOutput].sum(axis=0).plot()  

@@ -15,7 +15,9 @@ from pymoo.algorithms.moo.nsga2 import NSGA2
 import plotly.graph_objects as go
 
 SmartBuilingObject = None
-SensorMetadataObject = None 
+SensorMetadataObject = None # evaluate business intelligence of a chromosome
+
+taskTypes = ["forward", "installCost", "power" , "backward"] #  
 class sensorOptimizingProblem(Problem):
 
     def __init__(self, n_var=2, n_obj=1, n_constr=1, xl=0, xu=10, type_var=int):
@@ -74,9 +76,7 @@ def returnMethod(optimizationTypeBool=True, pop_size=100):
     return method
 
 
-# evaluate forecasting power of a chromosome
 
-taskTypes = ["forward",  "installCost", "power" , "backward"] 
 def multiObjectiveScore(chromosome):
     scoreArray = [ ]
     for task in taskTypes:
