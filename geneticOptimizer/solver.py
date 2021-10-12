@@ -139,7 +139,9 @@ class SolverBuildings:
         opCost = res_data[2]
         # opCost = (opCost-min(opCost))/(max(opCost)- min(opCost))
         installCost =  res_data[1]
-        sol = pd.DataFrame.from_dict({"accuracy":accuracy, "opCost":opCost, "installCost":installCost}).sort_values(by='installCost')
+        noOfSensors =[sum(i) for i in self.res.X]
+        # import pdb; pdb.set_trace()
+        sol = pd.DataFrame.from_dict({"accuracy":accuracy, "powerConsumed":opCost, "installCost":installCost, "noOfSens": noOfSensors}).sort_values(by='noOfSens')
         sol.to_csv(self.output_path+"tradeoff.csv")
         chromosome = pd.DataFrame(self.res.X)
         chromosome.to_csv(self.output_path+"chromosomes.csv")
