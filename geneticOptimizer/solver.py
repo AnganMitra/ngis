@@ -1,6 +1,7 @@
 import pdb
 from matplotlib import markers
 import pandas as pd
+from pymoo.core.crossover import Crossover
 from sensorMetadata import SensorMetadata
 from taskGenerator import TaskGenerator
 import numpy as np
@@ -28,6 +29,7 @@ class sensorOptimizingProblem(Problem):
         # print(stride)
         for index in range(0, len(chromosome),stride ):
             coverageMiss += 1 if sum( chromosome[index: index+ stride]) == 0 else 0
+            # coverageMiss += sum( chromosome[index: index+ stride])
 
         return coverageMiss
 
@@ -49,31 +51,32 @@ class sensorOptimizingProblem(Problem):
 
         return super()._evaluate(x, out, *args, **kwargs)
 
-def returnMethod(optimizationTypeBool=True, pop_size=20):
+def returnMethod(optimizationTypeBool=True, pop_size=100):
     method = None
-    if not optimizationTypeBool:
-        method = get_algorithm("nsga2",
-                            pop_size=pop_size,
-                            sampling=get_sampling("int_random"),
-                            crossover=get_crossover("int_sbx", prob=1.0, eta=3.0),
-                            mutation=get_mutation("int_pm", eta=3.0),
-                            eliminate_duplicates=True,
-                            ) 
-    else:
-        method = get_algorithm("nsga2",
-                        pop_size=pop_size,
-                        sampling=get_sampling("bin_random"),
-                        crossover=get_crossover("bin_hux"),
-                        mutation=get_mutation("bin_bitflip"),
-                        eliminate_duplicates=True
-                        )
+    # if not optimizationTypeBool:
+    #     method = get_algorithm("nsga2",
+    #                         pop_size=pop_size,
+    #                         sampling=get_sampling("int_random"),
+    #                         crossover=get_crossover("int_sbx", prob=1.0, eta=3.0),
+    #                         mutation=get_mutation("int_pm", eta=3.0),
+    #                         eliminate_duplicates=True,
+    #                         ) 
+    # else:
+    method = get_algorithm("nsga2",
+                    pop_size=pop_size,
+                    sampling=get_sampling("bin_random"),
+                    # crossover=get_crossover("bin_hux"),
+                    crossover=get_crossover("real_k_point", n_points=2),
+                    mutation=get_mutation("bin_bitflip"),
+                    eliminate_duplicates=True
+                    )
     
     return method
 
 
 # evaluate forecasting power of a chromosome
 
-taskTypes = ["forward", "backward", "installCost", "power"]
+taskTypes = ["forward",  "installCost", "power" , "backward"] 
 def multiObjectiveScore(chromosome):
     scoreArray = [ ]
     for task in taskTypes:
@@ -83,17 +86,6 @@ def multiObjectiveScore(chromosome):
         elif task in ["installCost", "power"]:
             loss = SensorMetadataObject.evaluateBusiness(chromosome, task)
         scoreArray.append(loss)
-
-    # scoreArray =[
-    #         # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
-    #         SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forward"), ## support to approximated
-    #         SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="backward"), ## approximated to support
-    #         SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
-    #         SensorMetadataObject.evaluateBusiness(chromosome, taskType="power"),  ## power needed to run the solution 
-    #         # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
-            
-    #         ]
-
     return scoreArray
 
 class SolverBuildings:

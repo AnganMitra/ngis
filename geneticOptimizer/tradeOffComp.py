@@ -41,6 +41,19 @@ filePath +="paperFigures/"
 # 
 expOutput =folderOptions[0]
 tradeOff[expOutput]=tradeOff[expOutput].sort_values(by='noOfSens')
+
+# plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
+#         data1 = tradeOff[expOutput]["forward"] ,
+#         data2=tradeOff[expOutput]["backward"],
+#         xlabel="Number of Sensors",
+#         ylabel="Forward (MSE) ",
+#         y2label="Backward (MSE) "
+#         )
+# plt.savefig(filePath+"tradeoffForwardBackward.png", dpi=200)
+# # plt.show()
+# plt.clf()
+
+
 plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
         data1 = tradeOff[expOutput]["forward"] ,
         data2=tradeOff[expOutput]["power"],
@@ -50,16 +63,7 @@ plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
         )
 plt.savefig(filePath+"tradeoffForwardPower.png", dpi=200)
 plt.clf()
-plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
-        data1 = tradeOff[expOutput]["forward"] ,
-        data2=tradeOff[expOutput]["backward"],
-        xlabel="Number of Sensors",
-        ylabel="Forward (MSE) ",
-        y2label="Backward (MSE) "
-        )
-plt.savefig(filePath+"tradeoffForwardBackward.png", dpi=200)
-# plt.show()
-plt.clf()
+
 
 plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
         data1 = tradeOff[expOutput]["forward"] ,
