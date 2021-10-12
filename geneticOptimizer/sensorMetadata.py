@@ -23,7 +23,7 @@ class SensorMetadata:
             end_index=start_index+len(self.sensorLabels)
             
             try:
-                if taskType=="opCost":
+                if taskType=="installCost":
                     opCost = -1000000
 
                     # import pdb; pdb.set_trace()
@@ -32,7 +32,7 @@ class SensorMetadata:
                     elif self.groupby == "domain":
                         opCost =  sum(sum(chromosome[start_index:end_index])*self.costVector[int(start_index/len(self.sensorLabels))])
                     metric.append(opCost)
-                elif taskType == "installCost":
+                elif taskType == "power":
                     installCost = -1000000
                     if self.groupby == "zone":
                         installCost = np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0]

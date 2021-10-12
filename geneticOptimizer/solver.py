@@ -1,3 +1,4 @@
+import pdb
 from matplotlib import markers
 import pandas as pd
 from sensorMetadata import SensorMetadata
@@ -72,16 +73,26 @@ def returnMethod(optimizationTypeBool=True, pop_size=20):
 
 # evaluate forecasting power of a chromosome
 
+taskTypes = ["forward", "backward", "installCost", "power"]
 def multiObjectiveScore(chromosome):
-    scoreArray = [ 
-                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
-                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forward"), ## support to approximated
-                SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="backward"), ## approximated to support
-                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
-                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="opCost"),  ## power needed to run the solution 
-                # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
-                
-                ]
+    scoreArray = [ ]
+    for task in taskTypes:
+        loss = 0
+        if task in  ["forward", "backward"]:
+            loss=SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, task)
+        elif task in ["installCost", "power"]:
+            loss = SensorMetadataObject.evaluateBusiness(chromosome, task)
+        scoreArray.append(loss)
+
+    # scoreArray =[
+    #         # SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="prediction") , ## Forecasting channel 
+    #         SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="forward"), ## support to approximated
+    #         SmartBuilingObject.taskGenerator.evaluateAILoss(chromosome, taskType="backward"), ## approximated to support
+    #         SensorMetadataObject.evaluateBusiness(chromosome, taskType="installCost"), ## Cost of sensors to be installed
+    #         SensorMetadataObject.evaluateBusiness(chromosome, taskType="power"),  ## power needed to run the solution 
+    #         # SensorMetadataObject.evaluateBusiness(chromosome, taskType="coverage"),  ## power needed to run the solution 
+            
+    #         ]
 
     return scoreArray
 
@@ -137,29 +148,17 @@ class SolverBuildings:
         plot.add(self.res.F, facecolor="none", edgecolor="red", alpha=0.8, s=20)
         plot.show()
 
-    def plotSolution(self,):
-        res_data=self.res.F.T
-        # fig = go.Figure(data=go.Scatter(x=res_data[xIndex], y=res_data[yIndex], mode="markers"))
-        # fig.show()
-        
-        accuracy = res_data[0] 
-        # accuracy = (accuracy-min(accuracy))/(max(accuracy)- min(accuracy))
-        opCost = res_data[2]
-        # opCost = (opCost-min(opCost))/(max(opCost)- min(opCost))
-        installCost =  res_data[1]
-        noOfSensors =[sum(i) for i in self.res.X]
+    def saveSolution(self,):
+        res_data=self.res.F
+        sol = pd.DataFrame(res_data)
         # import pdb; pdb.set_trace()
-        sol = pd.DataFrame.from_dict({"accuracy":accuracy, "powerConsumed":opCost, "installCost":installCost, "noOfSens": noOfSensors}).sort_values(by='noOfSens')
+        sol.columns = taskTypes
+        noOfSensors =[sum(i) for i in self.res.X]
+        sol["noOfSens"] = noOfSensors
         sol.to_csv(self.output_path+"tradeoff.csv")
         chromosome = pd.DataFrame(self.res.X)
         chromosome.to_csv(self.output_path+"chromosomes.csv")
-        # plt.plot(sol.installCost, sol.opCost, marker="+", label =   "operating power")
-        # plt.plot(sol.installCost, sol.accuracy, marker="^", label = "aprroximation error")
-        # plt.xlabel("Sensor Cost")
-        # plt.legend()
-        # import pdb; pdb.set_trace()
-        # plt.savefig(self.output_path+"tradeoff.pdf", format="pdf", bbox_inches="tight")
-        # plt.show()
+
 
     def zonalSolutionAnalysis(self):
         start_index = 0
@@ -199,7 +198,7 @@ def optimizeVirtualSenseField():
 def zonalAnalysis():
     SmartBuilingObject.zonalSolutionAnalysis()
     # import pdb; pdb.set_trace()
-    SmartBuilingObject.plotSolution()
+    SmartBuilingObject.saveSolution()
 
 
 def reloadResults():
