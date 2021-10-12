@@ -1,19 +1,31 @@
+from matplotlib.pyplot import sca
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, RandomizedSearchCV, TimeSeriesSplit
 # import xgboost as xg
 from sklearn.metrics import mean_squared_error
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.preprocessing import MinMaxScaler
 class Learner:
     def __init__(self, data) -> None:
         self.data=data
         self.modelsLearned = {}
+        self.scaler = MinMaxScaler()
         pass
 
     def initOneMapperLearning(self,support,yTarget):
-        X = self.data[support]
+        # import pdb; pdb.set_trace()
+        df =  self.data
+        scaledData=(df-df.mean())/df.std()
+        # scaledData=(df-df.min())/(df.max()-df.min())
+
+        # X = scaledData[support].values.reshape(-1,1)
+        # y = scaledData[yTarget].values.reshape(-1,1)
+        X = scaledData[support].values.reshape(-1,1)
+        y = scaledData[yTarget].values.reshape(-1,1)
         # for yTarget in approximated:
         # import pdb; pdb.set_trace()
-        model, score = self.train(X.values.reshape(-1,1),self.data[yTarget].values.reshape(-1,1))
+        model, score = self.train(X, y)
+        # model, score = self.train(X.values.reshape(-1,1),self.data[yTarget].values.reshape(-1,1))
         self.modelsLearned[f"{yTarget}|{support}"]= model
         print ("Model Recorded ....", f"{yTarget} =  f( {support} )" )
         return score
@@ -22,7 +34,7 @@ class Learner:
     def train(self, X, y, crossValidation=True):
         
         try:
-            
+            # import pdb; pdb.set_trace()
             # param_cv = {
             # 'min_child_weight': [1, 5, 10],
             # 'gamma': [0.5, 1, 1.5, 2, 5],
@@ -38,8 +50,8 @@ class Learner:
             }
             folds = 5
             param_comb = 6
-            # skf = StratifiedKFold(n_splits=folds, shuffle = True, random_state = 42)
-            skf = TimeSeriesSplit(n_splits=3, test_size=2, gap=2)
+            skf = StratifiedKFold(n_splits=folds, shuffle = True, random_state = 42)
+            # skf = TimeSeriesSplit(n_splits=3, test_size=2, gap=2)
             # import pdb;pdb.set_trace()
             # model = xg.XGBRegressor(objective ='reg:linear', n_estimators = 10, seed = 123)
             model = DecisionTreeRegressor()
@@ -53,7 +65,7 @@ class Learner:
             return model, score
         except:
             print ("------XXXXXXXXXXX------------")
-            return None, -1000
+            return None, 10000
             pass
 
     def test(self, support, yTarget, X_test, y_true):

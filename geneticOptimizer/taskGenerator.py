@@ -31,14 +31,14 @@ class TaskGenerator:
         for taskType in self.taskTypes:
             self.megaMemory[f"{taskType}Loss"] = {}
             for zone in self.groups:
-                print (zone)
+                # print (zone)
                 
                 try:
                     self.megaMemory[f"{taskType}Loss"][zone] = MemoryTable(key=zone, numSensor= len(self.sensorLabels[zone]), sensorLabels= self.sensorLabels[zone], data=self.dataDictionary[zone], output_dir=self.output_path)
                     self.megaMemory[f"{taskType}Loss"][zone].populateBySingleTask()
 
                 except Error as err:
-                    print (err)
+                    # print (err)
                     pdb.set_trace()
                     pass
 

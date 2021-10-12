@@ -27,9 +27,10 @@ class SensorMetadata:
                 elif taskType == "installCost":
                     metric.append(np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0])
             except:
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
+                pass
         # import pdb; pdb.set_trace()
-        print (chromosome, metric)
+        # print (chromosome, metric)
         return sum(metric)
 
 

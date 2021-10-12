@@ -1,3 +1,5 @@
+from matplotlib import markers
+import pandas as pd
 from sensorMetadata import SensorMetadata
 from taskGenerator import TaskGenerator
 import numpy as np
@@ -39,7 +41,7 @@ class sensorOptimizingProblem(Problem):
             cvError.append(error)
         # import pdb; pdb.set_trace()
         out["F"] = np.array(resFitness)
-        print (out["F"])
+        # print (out["F"])
         # shape = out["F"].shape
         out["G"] =  np.array(cvError)
 
@@ -92,6 +94,7 @@ class SolverBuildings:
         self.res=None
         self.problem=None
         self.algorithm=None
+        self.output_path=output_path
         # self.sensorLabels = ["ACPower","lightPower","appPower","temperature","humidity","lux"]
         pass
 
@@ -125,10 +128,25 @@ class SolverBuildings:
         plot.add(self.res.F, facecolor="none", edgecolor="red", alpha=0.8, s=20)
         plot.show()
 
-    def plotSolution(self):
+    def plotSolution(self,):
         res_data=self.res.F.T
-        fig = go.Figure(data=go.Scatter(x=res_data[0], y=res_data[1], mode="markers"))
-        fig.show()
+        # fig = go.Figure(data=go.Scatter(x=res_data[xIndex], y=res_data[yIndex], mode="markers"))
+        # fig.show()
+        
+        accuracy = res_data[0] 
+        accuracy = (accuracy-min(accuracy))/(max(accuracy)- min(accuracy))
+        opCost = res_data[2]
+        opCost = (opCost-min(opCost))/(max(opCost)- min(opCost))
+        installCost =  res_data[1]
+        sol = pd.DataFrame.from_dict({"accuracy":accuracy, "opCost":opCost, "installCost":installCost}).sort_values(by='installCost')
+        
+        plt.plot(sol.installCost, sol.opCost, marker="+", label =   "operating power")
+        plt.plot(sol.installCost, sol.accuracy, marker="^", label = "aprroximation error")
+        plt.xlabel("Sensor Cost")
+        plt.legend()
+        # import pdb; pdb.set_trace()
+        plt.savefig(self.output_path+"tradeoff.pdf", format="pdf", bbox_inches="tight")
+        # plt.show()
 
     def zonalSolutionAnalysis(self):
         start_index = 0
@@ -141,8 +159,8 @@ class SolverBuildings:
                 "zone" : key,
                 "numSensors" : numSensors,
                 "sensorsSaved" : np.round(1 - numSensors/(end_index-start_index),2),
-                "requiredSensors" : [self.sensorLabels[i] for i,v in enumerate(chrEncoding) if v > 0],
-                "approximatedSensors" : [self.sensorLabels[i] for i,v in enumerate(chrEncoding) if v < 1]
+                "requiredSensors" : [self.taskGenerator.sensorLabels[key][i] for i,v in enumerate(chrEncoding) if v > 0],
+                "approximatedSensors" : [self.taskGenerator.sensorLabels[key][i] for i,v in enumerate(chrEncoding) if v < 1]
             })
             start_index = end_index
         print (inferenceDict)
@@ -167,6 +185,7 @@ def optimizeVirtualSenseField():
 
 def zonalAnalysis():
     SmartBuilingObject.zonalSolutionAnalysis()
+    # import pdb; pdb.set_trace()
     SmartBuilingObject.plotSolution()
 
 

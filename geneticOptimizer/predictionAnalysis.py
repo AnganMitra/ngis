@@ -22,7 +22,7 @@ def plotPredPerfbyKey(key, output_path):
     try:
         # rdf[key].plot(marker=11)
         fig = px.imshow(rdf[key])
-        fig.write_image(f"{output_path}{key}.pdf")
+        fig.write_image(f"{output_path}{key}.png",scale=2)
         
         # fig.show()
         # plt.show()

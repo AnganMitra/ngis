@@ -7,6 +7,7 @@ expMode = {
     "456f" : [4,5,6],
     "567f" : [5,6,7],
     "4567f": [4,5,6,7],
+    "234567f" : [2,3,4,5,6,7],
     "4f" : [4],
     "6f" : [6],
     "5f" : [5],
@@ -15,7 +16,7 @@ expMode = {
 taskType = {
     "optVsf" : "Get Optimal Sensor Locations", 
     "vsfGen": "Generate Virtual Sensor Field" ,
-    "zonAnaly" : "Analyse accuracy, capex/opex"
+    "zonAly" : "Analyse accuracy, capex/opex"
 }
 
 if __name__=="__main__":
@@ -82,9 +83,14 @@ if __name__=="__main__":
     
     if task == "vsfGen": 
         VirtualSensorField.createVirtualSenseField()
-    else:
-        VirtualSensorField.createVirtualSenseField()
+
+        
     if task == "optVsf":
+        VirtualSensorField.createVirtualSenseField()
         VirtualSensorField.optimizeVirtualSenseField()
-    elif task == "zonAnaly":
+
+    elif task == "zonAly":
+        VirtualSensorField.createVirtualSenseField()
+        VirtualSensorField.optimizeVirtualSenseField()
         VirtualSensorField.zonalAnalysis()
+        
