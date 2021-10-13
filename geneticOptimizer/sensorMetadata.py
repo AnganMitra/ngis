@@ -7,20 +7,23 @@ from config import sensorLibrary
 class SensorMetadata:
     def __init__(self, groupby="zone") -> None:
         self.sensorLabels = [i for i in sensorLibrary.keys()]
-        self.costVector = np.array([i["cost"] for i in sensorLibrary.values()]).reshape(1,-1)
-        self.powerVector = np.array([i["power"] for i in sensorLibrary.values()]).reshape(1,-1)
+        self.costVector = np.array([i["cost"] for i in sensorLibrary.values()]).reshape(1,-1)[0]
+        self.powerVector = np.array([i["power"] for i in sensorLibrary.values()]).reshape(1,-1)[0]
         self.groupby = groupby
         # self.costPurchase  = np.array([0,5,0.5,0.5,0.5,0.5,0.5])
         # self.powerConsumption = np.array([200,100,200,30,30,30])
 
         pass
 
+
     def evaluateBusiness(self, chromosome, taskType="opCost"):
         metric = []
         # if taskType=="opCost":
         # import pdb; pdb.set_trace()
-        for start_index in range(0, len(chromosome), len(self.sensorLabels)):
-            end_index=start_index+len(self.sensorLabels)
+        stride = 0
+        stride = int(len(chromosome)/len(self.sensorLabels)) if self.groupby == "domain" else len(self.sensorLabels)
+        for start_index in range(0, len(chromosome), stride):
+            end_index=start_index+stride
             
             try:
                 if taskType=="installCost":
@@ -30,21 +33,24 @@ class SensorMetadata:
                     if self.groupby == "zone":
                         opCost = np.dot(self.costVector,np.array(chromosome[start_index:end_index]))[0]
                     elif self.groupby == "domain":
-                        opCost =  sum(sum(chromosome[start_index:end_index])*self.costVector[int(start_index/len(self.sensorLabels))])
+                        opCost = sum(chromosome[start_index:end_index])*self.costVector[int(start_index/stride)] 
+                    # print ("OC===>     ", opCost, sum(chromosome[start_index:end_index]))
                     metric.append(opCost)
                 elif taskType == "power":
-                    installCost = -1000000
+                    power = 1000000
                     if self.groupby == "zone":
-                        installCost = np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0]
+                        power = np.dot(self.powerVector,np.array(chromosome[start_index:end_index]))[0]
                     elif self.groupby == "domain":
-                        installCost =  sum(sum(chromosome[start_index:end_index])*self.powerVector[int(start_index/len(self.sensorLabels))])
-                    metric.append(installCost)
+                        power = sum(chromosome[start_index:end_index])*self.powerVector[int(start_index/stride)]
+                    # print ("PW===>     ", power, sum(chromosome[start_index:end_index]))
+                    metric.append(power)
             except:
-                # import pdb; pdb.set_trace()
+                import pdb; pdb.set_trace()
                 pass
         # import pdb; pdb.set_trace()
-        # print (chromosome, metric)
-        return sum(metric)
+        metric = sum(metric)
+        print (f"Business Eval  {taskType} {sum(chromosome)} {(metric)} ")
+        return (metric)
 
 
     def plotDataCapacity(self):

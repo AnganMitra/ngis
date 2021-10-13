@@ -27,7 +27,7 @@ def plotDoubleAxisFig(t,data1,data2, xlabel ="", ylabel = "", y2label = ""):
 
 filePath = "./paperAnalysis/"
 expMode = "234567f"
-folderOptions = [f"{expMode}-domain",]  # f"{expMode}-domain-run0-identicalConf"
+folderOptions = [f"{expMode}-domain-allObj-2xambConfig",]  # f"{expMode}-domain-run0-identicalConf"
 chromosomes={}
 tradeOff = {}
 for expOutput in folderOptions:
@@ -80,6 +80,20 @@ try:
 except:
     print ("tradeoffForwardPower    ..XXXXXXXX...")
 
+
+try:
+    plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],
+            data1 = tradeOff[expOutput]["installCost"] ,
+            data2=tradeOff[expOutput]["power"],
+            xlabel="Number of Sensors",
+            ylabel="Purchase Cost ($)",
+            y2label="powerConsumed"
+            )
+    plt.savefig(filePath+"tradeoffCostPower.png", dpi=200)
+    plt.clf()
+    print ("tradeoffCostPower    .....")
+except:
+    print ("tradeoffCostPower    ..XXXXXXXX...")
 
 try:
     plotDoubleAxisFig(t=tradeOff[expOutput]["noOfSens"],

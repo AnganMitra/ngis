@@ -1,22 +1,18 @@
 
 from sklearn.cluster import KMeans
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.cluster import DBSCAN
+from sklearn.cluster import DBSCAN,KMeans
 from sklearn.cluster import OPTICS, cluster_optics_dbscan
 from sklearn.mixture import GaussianMixture
 import yaml
 plot2result =False
 import pandas as pd
 import argparse
-import warnings
-warnings.simplefilter(action='ignore')
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler, PowerTransformer
 import pickle
 from sklearn.metrics import precision_score, recall_score, precision_recall_fscore_support
 import sys
-sys.path.append("./learner/")
-from datapreprocessing.dataPreprocessing import add_scalers, runInference, add_rows
-
+import dataLoader as ld
 def engageModel (spacekey, model, X, task):
     
     if task == "train":
@@ -32,10 +28,10 @@ def engageModel (spacekey, model, X, task):
 
 
 algorithm_dict={
-    # 'kmeans' : kmeans(n_clusters=2,init='k-means++', n_init = 40, max_iter = 1000, random_state= 42) , 
+    'kmeans' : KMeans(n_clusters=23,init='k-means++', n_init = 40, max_iter = 100, random_state= 42) , 
     # 'agglomerativeclustering' : AgglomerativeClustering(n_clusters=2,affinity = 'euclidean', linkage = 'ward') ,
-    'gmm': GaussianMixture(n_components=3, random_state=42),
-    # 'dbscan' : dbscan(eps=10, min_samples=5) ,
+    # 'gmm': GaussianMixture(n_components=3, random_state=42),
+    'dbscan' : DBSCAN(eps=10, min_samples=5) ,
     # 'optics' : optics(min_samples=50, xi=.05, min_cluster_size=5),
     
 }
@@ -51,13 +47,9 @@ def run_unsupervisedLearning(spacekey,payload, output_filename, task, target=Non
             result[result==2]=1
             payload["{}.{}".format(spacekey,algoname)] = result
             
-            if plot2result:  plotResultFrame(points, algorithm, algorithms, "{}.png".format(algorithm))
         except:
             print ("Fail: {}".format(algoname))
-        try:
-            runInference(payload[target], result)
-        except:
-            pass
+        
     # import pdb; pdb.set_trace()
     keylist = algo_payload.columns
     cluster_center = runClusterInference( spacekey,payload,keylist)
@@ -81,30 +73,17 @@ def runClusterInference( spacekey,payload, keylist):
             x = pd.DataFrame(x)
             x["count"] = [len(payload[payload[ "{}.{}".format(spacekey,algoname)] == i])  for i in set(payload[ "{}.{}".format(spacekey,algoname)] ) ]
             cluster_center["{}-{}".format(spacekey, algoname)] = x[x.index == "mean"]
-            x.to_csv("models/{}-{}".format(spacekey,algoname))
+            x.to_csv("paperAnalysis/unsupLearn/{}-{}.csv".format(spacekey,algoname))
         except:
             pass
     return cluster_center
 
 
-    
-def learn(filename, spacekey,output_filename,task):
-    df = pd.read_csv(filename, index_col=["time"], parse_dates=True)
-    
-    df.fillna(method='ffill', inplace=True)
-    df.fillna(0, inplace=True)
-    # import pdb; pdb.set_trace()
-    target = "babbage.presence"
-    remove_columns = ["jacqaurd.motion", "babyfoot.motion"]
-    payload = df[[x for x in df.columns if spacekey in x and x not in remove_columns]]
-    run_unsupervisedLearning(spacekey,payload, output_filename, task= task, target=target)
-
-
 if  __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-i", "--input_file", help="path of the yaml file.")
-    parser.add_argument("-o", "--output_filename", help="path of the output directory.")
+    parser.add_argument("-i", "--input_dir", help="path of the input dir")
+    parser.add_argument("-o", "--output_dir", help="path of the output directory.")
     parser.add_argument("-s", "--spacekey", help="Provide spacekey")
     parser.add_argument("-lt", "--task", help= "Default: train, 'test' to test model, 'train' to build model")
 
@@ -114,26 +93,37 @@ if  __name__ == "__main__":
     output_filename = None
     task = True
     try:
-        input_file = args["input_file"]
+        input_dir = args["input_dir"]
     except:
         print ("Data file missing in arg")
         exit()
 
     try:
-        output_filename = args["output_filename"]
+        output_dir = args["output_dir"]
     except:
         pass
-
-    try:
-        spacekey = args["spacekey"]
-    except:
-        pass
+        
 
     try:
         task = args["task"]
     except:
         task = "train"
-        
+    '''
+    # to dump data
+    sensorDictionary, encodingLabels= ld.getSpatialGroupData(dataPath = input_dir, 
+                                        start_index=0, end_index =400000, 
+                                        floors = [2,3,4,5,6,7])
 
-    learn(input_file, spacekey,output_filename,task)
+    flatTable = []
+    for k,v in sensorDictionary.items():
+        flatTable.append(v)
+        flatTable[-1].columns= [f"{k}-{j}" for j in flatTable[-1].columns]
+    
+    # allzoneallsensorData = pd.concat(flatTable, axis= 0).bfill().ffill().fillna(0)
+    allzoneallsensorData= pd.concat(flatTable, axis= 0).ffill(axis="columns").bfill(axis="columns").dropna()
+    allzoneallsensorData.to_csv("./paperAnalysis/unsupLearn/bigData.csv")
+    '''    
+    allzoneallsensorData = pd.read_csv(input_dir, index_col=["Date"], parse_dates=True)[:10000].T
+    task="train"
+    run_unsupervisedLearning(spacekey,payload=allzoneallsensorData, output_filename=output_dir, task= task, )
     
