@@ -1,2 +1,3 @@
-# ngis
-Next Generation Intelligent Spaces
+# Next Generation Intelligent Spaces
+
+PRESENTS A MINIMALISTIC SOLUTION TO PUT SENSORS IN A BUILDING.
