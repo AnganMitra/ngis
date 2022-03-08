@@ -1,0 +1,1 @@
+{"dynamics": "x0' = -16.399 sin(1 x0) + -12.076 cos(1 x0) + 19.517 cos(1 x1) + 0.074 sin(1 x2) + 0.228 cos(1 x2)\nx1' = 0.000\nx2' = 180.000 cos(1 x1)\n", "x0_initial": [0.4045463301868621, 0.0, 1010.0], "testPerformance ": 0.0005509664650902671, "variables": ["temperature", "ACPower", "dateP"]}
